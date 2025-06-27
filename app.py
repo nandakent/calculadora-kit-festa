@@ -1,76 +1,81 @@
 import streamlit as st
 import pandas as pd
 
-st.set_page_config(page_title="Calculadora de Preços - Kit Festa", layout="centered")
+st.set_page_config(page_title="Calculadora Da Maju Confeitaria", layout="centered")
 
+# Cores e estilo
 st.markdown("""
 <style>
-    .main { background-color: #fffbea; }
+    .stApp { background-color: #fffafc; }
     h1, h2, h3 { color: #800080; }
-    .stButton > button { background-color: #800080; color: white; border-radius: 12px; }
+    .stButton>button { background-color: #800080; color: white; border-radius: 10px; padding: 0.5em 1.5em; font-weight: bold; }
+    .divider { border-top: 2px solid #800080; margin: 30px 0; }
 </style>
 """, unsafe_allow_html=True)
 
-st.title("🧁 Calculadora de Preço por Receita - Kit Festa")
-st.subheader("Insira os ingredientes e os custos da produção")
-
-st.markdown("---")
+st.title("Calculadora Da Maju Confeitaria")
+st.write("Organize sua precificação com clareza e eficiência.")
 
 # Ingredientes
-st.markdown("### Ingredientes Usados")
-with st.expander("Adicionar Ingredientes"):
-    ingredientes = []
-    num = st.number_input("Quantos ingredientes você vai adicionar?", min_value=1, max_value=20, value=5)
-    for i in range(num):
-        st.markdown(f"**Ingrediente {i+1}**")
-        nome = st.text_input(f"Nome do ingrediente {i+1}", key=f"nome{i}")
-        qtd_usada = st.number_input(f"Quantidade usada (ex: 300)", key=f"qtd{i}", min_value=0.0)
-        unidade = st.selectbox(f"Unidade", ["g", "kg", "ml", "l", "un", "caixa"], key=f"uni{i}")
-        qtd_emb = st.number_input(f"Quantidade na embalagem comprada", key=f"emb{i}", min_value=0.01)
-        preco_emb = st.number_input(f"Preço da embalagem comprada", key=f"preco{i}", min_value=0.01)
-        if nome:
-            custo_prop = (qtd_usada / qtd_emb) * preco_emb
-            ingredientes.append({
-                "Ingrediente": nome,
-                "Qtd usada": qtd_usada,
-                "Unidade": unidade,
-                "Custo": round(custo_prop, 2)
-            })
+st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
+st.header("Ingredientes")
+num = st.number_input("Quantos ingredientes?", min_value=1, max_value=20, value=5)
+ing_list = []
+columns_ing = st.columns([3, 1, 1, 1, 1])
+for col, label in zip(columns_ing, ["Nome", "Qtd usada", "Unidade", "Qtd emb.", "R$ Embalagem"]):
+    col.markdown(f"*{label}*")
 
-# Mostrar tabela de custos
-if ingredientes:
-    df = pd.DataFrame(ingredientes)
-    st.markdown("#### Custo dos Ingredientes")
-    st.dataframe(df)
-    total_direto = sum([item['Custo'] for item in ingredientes])
+for i in range(num):
+    cols = st.columns([3, 1, 1, 1, 1])
+    nome = cols[0].text_input(f"Ingrediente {i+1}", key=f"nome{i}")
+    qtd_usada = cols[1].number_input("", key=f"qtd{i}", min_value=0.0)
+    unidade = cols[2].selectbox("", ["g", "kg", "ml", "l", "un", "caixa"], key=f"uni{i}")
+    qtd_emb = cols[3].number_input("", key=f"emb{i}", min_value=0.01)
+    prec_emb = cols[4].number_input("", key=f"pre{i}", min_value=0.01)
+    if nome:
+        custo = (qtd_usada / qtd_emb) * prec_emb
+        ing_list.append({
+            "Ingrediente": nome,
+            "Qtd usada": f"{qtd_usada} {unidade}",
+            "Custo (R$)": round(custo, 2)
+        })
+
+if ing_list:
+    df_ing = pd.DataFrame(ing_list)
+    st.table(df_ing)
+    total_direto = df_ing["Custo (R$)"].sum()
     st.success(f"Custo total dos ingredientes: R$ {total_direto:.2f}")
 
 # Custos fixos mensais
-st.markdown("---")
-st.markdown("### Custos Fixos Mensais")
-gas = st.number_input("Gás (mensal)", value=130.0)
-luz = st.number_input("Luz (mensal)", value=150.0)
-tempo_horas = st.number_input("Horas gastas por receita", value=3.0)
-valor_hora = st.number_input("Valor da sua hora de trabalho (R$)", value=15.0)
+st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
+st.header("Custos Fixos Mensais")
+custos = {}
+num_costs = st.number_input("Quantos custos fixos deseja incluir?", min_value=1, max_value=10, value=3)
+for j in range(num_costs):
+    name = st.text_input(f"Nome do custo {j+1}", value=["Gás","Luz","Tempo trabalhado (em horas)"][j] if j<3 else "", key=f"name{j}")
+    val = st.number_input(f"Valor R$ {name or j+1}", min_value=0.0, key=f"cost{j}")
+    if name:
+        custos[name] = val
 
-custo_tempo = tempo_horas * valor_hora
-st.info(f"Custo de trabalho por receita: R$ {custo_tempo:.2f}")
+# Valor da hora de trabalho
+if "Tempo trabalhado" in "".join(custos.keys()) or any("tempo" in k.lower() for k in custos.keys()):
+    st.markdown("\n*Obs.:* Valor da hora de trabalho é apenas um exemplo. Altere conforme desejar.")
 
-total_mensal = gas + luz + custo_tempo
-producoes_mes = st.number_input("Quantas receitas (ou bolos) por mês?", value=10, min_value=1)
-custo_indireto_unit = total_mensal / producoes_mes
-st.success(f"Custo indireto por receita: R$ {custo_indireto_unit:.2f}")
+total_mensal = sum(custos.values())
+producoes = st.number_input("Produções por mês", min_value=1, value=10)
+indireto = total_mensal / producoes
+st.info(f"Custo indireto por unidade: R$ {indireto:.2f}")
 
-# Lucro
-st.markdown("---")
-st.markdown("### Margem de Lucro")
-lucro = st.slider("Margem de lucro (%)", 0, 200, 30)
+# Lucro e preço final
+st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
+st.header("Preço de Venda")
+lucro = st.slider("Margem de Lucro (%)", 0, 200, 30)
+if st.button("Calcular"):
+    preco_total = total_direto + indireto
+    final = preco_total * (1 + lucro/100)
+    st.markdown(f"### Preço sugerido: R$ {final:.2f}")
+    st.caption("Cálculo: Custo Direto + Indireto + Lucro")
 
-# Resultado final
-st.markdown("---")
-if st.button("Calcular Preço Final"):
-    preco_total = total_direto + custo_indireto_unit
-    preco_venda = preco_total * (1 + lucro / 100)
-    st.markdown(f"## 💰 Preço de Venda Sugerido: **R$ {preco_venda:.2f}**")
-    st.caption("Cálculo: (Custo Direto + Indireto) + Lucro")
-
+# Observação
+st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
+st.caption("Custo indireto por unidade = soma dos custos fixos dividido pelo total de produções mensais.")
