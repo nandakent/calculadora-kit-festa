@@ -14,6 +14,8 @@ st.markdown("""
 
 st.title("Calculadora Da Maju Confeitaria")
 
+custo_ingredientes = 0.0  # valor inicial padrão
+
 # INGREDIENTES
 with st.expander("Ingredientes"):
     num_ing = st.number_input("Quantos ingredientes?", min_value=1, max_value=20, value=5)
@@ -23,7 +25,7 @@ with st.expander("Ingredientes"):
         nome = cols[0].text_input(f"Nome do ingrediente {i+1}", key=f"nome{i}")
         qtd_usada = cols[1].number_input("Quantidade usada", min_value=0.0, key=f"qtd{i}")
         unidade = cols[2].selectbox("Unidade", ["g", "kg", "ml", "l", "un", "caixa"], key=f"uni{i}")
-        qtd_emb = cols[3].number_input("Qtd por embalagem", min_value=0.01, key=f"emb{i}")
+        qtd_emb = cols[3].number_input("Quantidade por embalagem", min_value=0.01, key=f"emb{i}")
         preco_emb = cols[4].number_input("Preço da embalagem (R$)", min_value=0.01, key=f"preco{i}")
 
         if nome:
